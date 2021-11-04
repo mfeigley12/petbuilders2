@@ -5,8 +5,6 @@ import tensorflow as tf
 import path
 import glob
 
-
-#from kaggle_datasets import KaggleDatasets
 from pathlib import Path
 
 
@@ -17,5 +15,7 @@ for dirname, _, filenames in os.walk('/kaggle/input'):
 path = '../input/petfinder-pawpularity-score/'
 train_df = pd.read_csv(path + 'train.csv')
 test_df = pd.read_csv(path + 'test.csv')
-train_jpg = glob(path + "train/*.jpg")
-test_jpg = glob(path + "test/*.jpg")
+train_jpg = (path + "train/*.jpg")
+test_jpg = (path + "test/*.jpg")
+
+print('test_jpg is of type ',type(test_jpg), ' and length ', len(test_jpg))
