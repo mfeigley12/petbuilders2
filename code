@@ -6,12 +6,13 @@ import os
 import tensorflow as tf
 import wandb
 import fastai.vision.all
+import sys
 
 from glob import glob
 from os import walk
 
 
-def loader():
+def file_loader():
     path = 'petfinder-pawpularity-score/'
 
     train_df = pd.read_csv(path + 'train.csv')
@@ -24,17 +25,49 @@ def loader():
     return train_df, test_df, train_jpg, train_df, path
 
 
-def model_creation(train_df, test_df, train_jpg, test_jpg, dataset_path):
+def data_loader(train_df, test_df, train_jpg, test_jpg, dataset_path):
     fastai.vision.all.set_seed(999, reproducible=True)
     train_df['path'] = train_df['Id'].map(lambda x: str(dataset_path + 'train/' + x) + '.jpg')
     train_df = train_df.drop(columns=['Id'])
     train_df = train_df.sample(frac=1).reset_index(drop=True)  # shuffle dataframe
-    print(train_df.head())
+    print(train_df.info(max_cols=train_df.shape[1]))
+    train_df['Pawpularity'].hist(figsize=(10, 5))
+    print(f"The mean Pawpularity score is {train_df['Pawpularity'].mean()}")
+    print(f"The median Pawpularity score is {train_df['Pawpularity'].median()}")
+    print(f"The standard deviation of the Pawpularity score is {train_df['Pawpularity'].std()}")
+    print(f"There are {len(train_df['Pawpularity'].unique())} unique values of Pawpularity score")
+    train_df['norm_score'] = train_df['Pawpularity'] / 100
+    print(train_df['norm_score'])
+    im = fastai.vision.all.Image.open(train_df['path'][1])
+    width, height = im.size
+    print(width, height)
+    # im.show()
+    dls = fastai.vision.all.ImageDataLoaders.from_df(train_df,  # pass in train DataFrame
+                                                     valid_pct=0.2,  # 80-20 train-validation random split
+                                                     seed=999,  # seed
+                                                     fn_col='path',
+                                                     # filename/path is in the second column of the
+                                                     # DataFrame
+                                                     label_col='norm_score',
+                                                     # label is in the first column of the DataFrame
+                                                     y_block=fastai.vision.all.RegressionBlock,
+                                                     # The type of target
+                                                     bs=32,  # pass in batch size
+                                                     num_workers=8,
+                                                     item_tfms=fastai.vision.all.Resize(224),
+                                                     # pass in item_tfms
+                                                     batch_tfms=fastai.vision.all.setup_aug_tfms(
+                                                         [fastai.vision.all.Brightness(),
+                                                          fastai.vision.all.Contrast(),
+                                                          fastai.vision.all.Hue(),
+                                                          fastai.vision.all.Saturation()]))
+    # pass in batch_tfms
+
 
 
 def main():
-    train_df, test_df, train_jpg, train_df, path = loader()
-    model_creation(train_df, test_df, train_jpg, train_df, path)
+    train_df, test_df, train_jpg, train_df, path = file_loader()
+    data_loader(train_df, test_df, train_jpg, train_df, path)
 
 
 if __name__ == '__main__':
