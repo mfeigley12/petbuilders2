@@ -1,26 +1,41 @@
+# how to set to GPU***
 
 import numpy as np
 import pandas as pd
 import os
 import tensorflow as tf
 import wandb
+import fastai.vision.all
 
-from sys import path
 from glob import glob
 from os import walk
 
 
-for dirname, filenames, _ in os.walk('kaggle/input'):
-    for filename in filenames:
-        print(os.path.join(dirname, filename))
+def loader():
+    path = 'petfinder-pawpularity-score/'
 
-path=("E:/Fall Semester/AI/project/input/petfinder-pawpularity-score/")
+    train_df = pd.read_csv(path + 'train.csv')
+    test_df = pd.read_csv(path + 'test.csv')
+    train_jpg = glob(path + "train/*.jpg")
+    test_jpg = glob(path + "test/*.jpg")
 
-train_df = pd.read_csv(path + 'train.csv')
-test_df = pd.read_csv(path + 'test.csv')
-train_jpg = glob(path + "train/*.jpg")
-test_jpg = glob(path + "test/*.jpg")
-
-print('test_jpg is of type ', type(test_jpg), ' and length ', len(test_jpg))
+    print('test_jpg is of type ', type(test_jpg[0]), ' and length ', len(test_jpg))
+    print(test_jpg[0])
+    return train_df, test_df, train_jpg, train_df, path
 
 
+def model_creation(train_df, test_df, train_jpg, test_jpg, dataset_path):
+    fastai.vision.all.set_seed(999, reproducible=True)
+    train_df['path'] = train_df['Id'].map(lambda x: str(dataset_path + 'train/' + x) + '.jpg')
+    train_df = train_df.drop(columns=['Id'])
+    train_df = train_df.sample(frac=1).reset_index(drop=True)  # shuffle dataframe
+    print(train_df.head())
+
+
+def main():
+    train_df, test_df, train_jpg, train_df, path = loader()
+    model_creation(train_df, test_df, train_jpg, train_df, path)
+
+
+if __name__ == '__main__':
+    main()
